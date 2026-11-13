@@ -47,8 +47,6 @@
           odds1x2: { home: '2.10', draw: '3.60', away: '3.25' }
         },
         htScore: '1 - 0',
-        ftScore: '2 - 1',
-        tip: 'ฟันธงต่อเรือใบ ในรังไร้พ่าย',
         venue: 'เอทิฮัด สเตเดี้ยม (Etihad Stadium)',
         referee: 'ไมเคิล โอลิเวอร์ (Michael Oliver)',
         broadcast: 'True Premier Football 1, True 4K',
