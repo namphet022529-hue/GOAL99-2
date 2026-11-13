@@ -1,0 +1,628 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0">
+  <title>GOAL99 - ผลบอลสด โปรแกรมบอล ตารางคะแนน และวิเคราะห์บอลวันนี้</title>
+  <meta name="description" content="GOAL99 เว็บศูนย์รวมข้อมูลฟุตบอลครบทุกลีก ผลบอลสดรวดเร็ว โปรแกรมบอล ตารางคะแนน สถิติย้อนหลัง และบทวิเคราะห์ก่อนแข่งที่ตรวจสอบได้">
+  <meta name="theme-color" content="#0d0f12">
+  
+  <!-- Favicon SVG -->
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><circle cx='50' cy='50' r='48' fill='%2312141a' stroke='%23e50914' stroke-width='4'/><path d='M35 30 L55 30 L50 45 L65 45 L45 72 L48 53 L32 53 Z' fill='%23e50914'/><text x='50' y='88' font-family='Arial Black, sans-serif' font-size='18' font-weight='900' fill='%23ffffff' text-anchor='middle'>GOAL99</text></svg>">
+
+  <!-- Google Fonts: Prompt & Inter for high readability in Thai & English -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=Prompt:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+  
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body class="bg-dark text-light antialiased">
+
+  <!-- TOP STATUS BAR: Connection, Thailand Timezone, Sound Alerts, Live Simulation -->
+  <div class="top-status-bar" role="complementary" aria-label="สถานะระบบและเวลาสากล">
+    <div class="container-fluid top-status-inner">
+      <div class="status-left">
+        <span class="live-dot" id="liveDot" aria-hidden="true"></span>
+        <span class="status-text" id="connectionStatus">เชื่อมต่อเซิร์ฟเวอร์สด (Socket Live)</span>
+        <span class="divider">|</span>
+        <span class="time-tz" id="thaiClock">เวลาประเทศไทย (GMT+7): --:--:--</span>
+      </div>
+      <div class="status-right">
+        <!-- Goal Alert Sound Switcher -->
+        <button type="button" class="btn-status-action" id="toggleSoundBtn" aria-label="เปิดหรือปิดเสียงแจ้งเตือนประตู" title="เปิด/ปิดเสียงเตือนเมื่อมีประตู">
+          <span class="icon" id="soundIcon">🔔</span>
+          <span class="label" id="soundLabel">เสียงเตือน: เปิด</span>
+        </button>
+        <span class="divider">|</span>
+        <!-- Demo Simulation Mode Switcher -->
+        <button type="button" class="btn-status-action btn-sim" id="toggleSimBtn" aria-label="จำลองสถานการณ์ผลบอลสด" title="คลิกเพื่อเปิด/ปิดระบบจำลองสกอร์และนาทีแข่งแบบ Real-time">
+          <span class="icon">⚡</span>
+          <span class="label" id="simLabel">จำลองแข่งสด: ON</span>
+        </button>
+        <span class="divider">|</span>
+        <span class="last-sync" id="lastUpdatedTime">อัปเดต: เมื่อสักครู่</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- MAIN HEADER & NAVIGATION (5 หมวดหลักตามข้อกำหนด) -->
+  <header class="site-header" role="banner">
+    <div class="container header-container">
+      
+      <!-- Logo GOAL99 -->
+      <a href="#home" class="brand-logo" id="logoBtn" aria-label="GOAL99 หน้าแรก">
+        <div class="logo-badge">
+          <span class="logo-text-goal">GOAL</span>
+          <span class="logo-text-99">99</span>
+        </div>
+        <span class="logo-sub">LIVE SCORE & STATS</span>
+      </a>
+
+      <!-- Desktop Main Navigation (5 หมวดชัดเจน ไม่ซ้ำซ้อน) -->
+      <nav class="main-nav" role="navigation" aria-label="เมนูหลักเว็บไซต์">
+        <ul class="nav-list">
+          <li>
+            <button type="button" class="nav-link active" data-page="live">
+              <span class="nav-icon">⚡</span>
+              <span>ผลบอลสด</span>
+              <span class="badge-live-count" id="headerLiveCount">3</span>
+            </button>
+          </li>
+          <li>
+            <button type="button" class="nav-link" data-page="schedule">
+              <span class="nav-icon">📅</span>
+              <span>โปรแกรมบอล</span>
+            </button>
+          </li>
+          <li>
+            <button type="button" class="nav-link" data-page="standings">
+              <span class="nav-icon">🏆</span>
+              <span>ตารางคะแนน</span>
+            </button>
+          </li>
+          <li>
+            <button type="button" class="nav-link" data-page="analysis">
+              <span class="nav-icon">📊</span>
+              <span>วิเคราะห์บอล</span>
+            </button>
+          </li>
+          <li>
+            <button type="button" class="nav-link" data-page="favorites">
+              <span class="nav-icon">⭐</span>
+              <span>รายการโปรด</span>
+              <span class="badge-fav-count" id="headerFavCount">0</span>
+            </button>
+          </li>
+        </ul>
+      </nav>
+
+      <!-- Header Quick Actions (About / Contact / Theme) -->
+      <div class="header-actions">
+        <button type="button" class="btn-outline-sm" id="btnOpenAbout" aria-label="เกี่ยวกับ GOAL99 และติดต่อเรา">
+          <span class="icon">ℹ️</span>
+          <span class="text">เกี่ยวกับเรา</span>
+        </button>
+      </div>
+
+    </div>
+  </header>
+
+  <!-- QUICK ANNOUNCEMENT / FRESHNESS NOTICE -->
+  <div class="freshness-banner" id="freshnessAlert" role="alert" style="display: none;">
+    <div class="container banner-content">
+      <span class="alert-icon">⚠️</span>
+      <span class="alert-msg" id="freshnessMsg">ระบบกำลังรอการซิงค์ข้อมูลใหม่ล่าสุด ข้อมูลปัจจุบันยังคงถูกต้อง ณ 2 นาทีที่แล้ว</span>
+      <button type="button" class="btn-refresh" id="manualRefreshBtn">รีเฟรชเดี๋ยวนี้</button>
+    </div>
+  </div>
+
+  <!-- MAIN APP CONTAINER -->
+  <main class="main-content" id="mainApp" role="main">
+
+    <!-- ============================================== -->
+    <!-- VIEW: LIVE & FIXTURES & DASHBOARD (DEFAULT VIEW) -->
+    <!-- ============================================== -->
+    <section id="viewDashboard" class="app-view active">
+      <div class="container">
+
+        <!-- 1. SEARCH BAR (รองรับค้นหาไทย/อังกฤษ/ชื่อย่อ/ลีก) -->
+        <div class="search-section" role="search" aria-label="ค้นหาทีมและลีก">
+          <div class="search-wrapper">
+            <span class="search-icon" aria-hidden="true">🔍</span>
+            <input 
+              type="text" 
+              id="teamSearchInput" 
+              class="search-input" 
+              placeholder="ค้นหาทีม ลีก หรือชื่อย่อ (เช่น แมนยู, MUN, ลิเวอร์พูล, LIV, บุรีรัมย์, La Liga...)" 
+              autocomplete="off"
+              aria-label="ช่องค้นหาทีมหรือลีก"
+            >
+            <button type="button" class="search-clear-btn" id="searchClearBtn" aria-label="ล้างคำค้นหา" style="display:none;">✕</button>
+          </div>
+          <div class="quick-tags" id="quickTags">
+            <span class="quick-title">ค้นหายอดนิยม:</span>
+            <button type="button" class="tag-pill" data-query="แมนยู">แมนฯ ยูไนเต็ด</button>
+            <button type="button" class="tag-pill" data-query="ลิเวอร์พูล">ลิเวอร์พูล</button>
+            <button type="button" class="tag-pill" data-query="อาร์เซน่อล">อาร์เซน่อล</button>
+            <button type="button" class="tag-pill" data-query="เรอัล มาดริด">เรอัล มาดริด</button>
+            <button type="button" class="tag-pill" data-query="บุรีรัมย์">บุรีรัมย์</button>
+          </div>
+        </div>
+
+        <!-- 2. DATE SELECTOR (ย้อนหลัง / วันนี้ / ล่วงหน้า พร้อมเวลาไทย) -->
+        <div class="date-bar-wrapper">
+          <div class="date-bar" role="tablist" aria-label="เลือกวันแข่งขัน" id="dateBar">
+            <button type="button" class="date-btn" data-date-offset="-2" role="tab">
+              <span class="day-name">2 วันก่อน</span>
+              <span class="day-date" id="dateMinus2">--/--</span>
+            </button>
+            <button type="button" class="date-btn" data-date-offset="-1" role="tab">
+              <span class="day-name">เมื่อวาน</span>
+              <span class="day-date" id="dateMinus1">--/--</span>
+            </button>
+            <button type="button" class="date-btn active" data-date-offset="0" role="tab" aria-selected="true">
+              <span class="day-name">วันนี้</span>
+              <span class="day-date" id="dateToday">--/--</span>
+              <span class="active-badge">TODAY</span>
+            </button>
+            <button type="button" class="date-btn" data-date-offset="1" role="tab">
+              <span class="day-name">พรุ่งนี้</span>
+              <span class="day-date" id="datePlus1">--/--</span>
+            </button>
+            <button type="button" class="date-btn" data-date-offset="2" role="tab">
+              <span class="day-name">อีก 2 วัน</span>
+              <span class="day-date" id="datePlus2">--/--</span>
+            </button>
+          </div>
+          <div class="date-info-note">
+            <span class="info-pill">🇹🇭 เวลาประเทศไทย UTC+7 (คู่เตะหลังเที่ยงคืนจะระบุคืนวันแข่งกำกับชัดเจน)</span>
+          </div>
+        </div>
+
+        <!-- 3. STATUS & LEAGUE FILTERS -->
+        <div class="filters-panel">
+          <!-- Status Tabs -->
+          <div class="status-tabs" role="tablist" aria-label="กรองสถานะการแข่งขัน">
+            <button type="button" class="status-btn active" data-status="all" role="tab">
+              <span>ทั้งหมด</span>
+              <span class="count-pill" id="countAll">0</span>
+            </button>
+            <button type="button" class="status-btn btn-live-tab" data-status="live" role="tab">
+              <span class="pulse-indicator"></span>
+              <span>กำลังแข่ง</span>
+              <span class="count-pill badge-danger" id="countLive">0</span>
+            </button>
+            <button type="button" class="status-btn" data-status="upcoming" role="tab">
+              <span>ยังไม่เริ่ม</span>
+              <span class="count-pill" id="countUpcoming">0</span>
+            </button>
+            <button type="button" class="status-btn" data-status="finished" role="tab">
+              <span>จบแล้ว</span>
+              <span class="count-pill" id="countFinished">0</span>
+            </button>
+            <button type="button" class="status-btn" data-status="favorites" role="tab">
+              <span>⭐ รายการโปรด</span>
+              <span class="count-pill" id="countFavorites">0</span>
+            </button>
+          </div>
+
+          <!-- Popular League Chips -->
+          <div class="league-chips" id="leagueChips">
+            <button type="button" class="chip active" data-league="all">ทุกลีก</button>
+            <button type="button" class="chip" data-league="PL">🏴󠁧󠁢󠁥󠁮󠁧󠁿 พรีเมียร์ลีก</button>
+            <button type="button" class="chip" data-league="LL">🇪🇸 ลาลีกา</button>
+            <button type="button" class="chip" data-league="SA">🇮🇹 กัลโช่ เซเรีย อา</button>
+            <button type="button" class="chip" data-league="BL">🇩🇪 บุนเดสลีกา</button>
+            <button type="button" class="chip" data-league="TL">🇹🇭 ไทยลีก 1</button>
+            <button type="button" class="chip" data-league="UCL">🇪🇺 ยูฟ่า แชมเปียนส์ลีก</button>
+            <button type="button" class="chip" data-league="UNL">🌍 คัดเลือกบอลโลก (ในรูปตัวอย่าง)</button>
+          </div>
+        </div>
+
+        <!-- 4. MATCH LIST CONTAINER (Grouped by league, mobile-first, zero horizontal overflow) -->
+        <div class="match-list-wrapper">
+          <div class="match-list-header">
+            <div class="list-title">
+              <h1 class="h4 m-0" id="currentSectionTitle">ผลบอลวันนี้ & โปรแกรมถ่ายทอดสด</h1>
+              <span class="match-summary-count" id="filteredMatchCount">กำลังโหลด...</span>
+            </div>
+            <div class="list-controls">
+              <!-- Toggle Odds Column (ช่องราคาบอล) -->
+              <button type="button" class="btn-control-toggle btn-odds-toggle active" id="btnToggleOdds" title="เปิดหรือปิดช่องแสดงราคาบอลและราคาไหล">
+                <span class="icon">💰</span>
+                <span id="toggleOddsText">ราคาบอล: เปิด</span>
+              </button>
+              <button type="button" class="btn-control-toggle" id="btnToggleAllLeagues" title="ย่อหรือขยายทุกลีก">
+                <span class="icon">↕️</span>
+                <span id="toggleLeaguesText">ย่อทุกลีก</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- MATCH LIST CONTENT (Populated dynamically) -->
+          <div class="match-groups" id="matchGroupsContainer">
+            <!-- Dynamic League Cards & Matches render here -->
+          </div>
+
+          <!-- Empty State (When no matches match filters) -->
+          <div class="empty-state" id="emptyState" style="display: none;">
+            <div class="empty-icon">⚽</div>
+            <h3>ไม่พบคู่แข่งขันที่ตรงกับเงื่อนไข</h3>
+            <p>ลองเปลี่ยนคำค้นหา วันที่ หรือรีเซ็ตตัวกรองสถานะ</p>
+            <button type="button" class="btn-red" id="btnResetFilters">รีเซ็ตตัวกรองทั้งหมด</button>
+          </div>
+        </div>
+
+        <!-- 5. LATEST MATCH ANALYSIS CARDS (หน้าแรก: บทวิเคราะห์ล่าสุด) -->
+        <section class="home-analysis-section">
+          <div class="section-header-row">
+            <div>
+              <h2 class="section-title"><span class="red-line"></span> บทวิเคราะห์และทีเด็ดบอลล่าสุด</h2>
+              <p class="section-desc">วิเคราะห์จากสถิติจริง แยกข้อเท็จจริงกับความคิดเห็น พร้อมระบบตรวจสอบความแม่นยำย้อนหลัง</p>
+            </div>
+            <button type="button" class="btn-link" id="btnViewAllAnalysis">ดูบทวิเคราะห์ทั้งหมด →</button>
+          </div>
+
+          <div class="analysis-grid" id="homeAnalysisGrid">
+            <!-- Dynamic analysis cards render here -->
+          </div>
+        </section>
+
+      </div>
+    </section>
+
+    <!-- ============================================== -->
+    <!-- VIEW: STANDINGS (ตารางคะแนน)                   -->
+    <!-- ============================================== -->
+    <section id="viewStandings" class="app-view">
+      <div class="container">
+        <div class="view-header">
+          <div>
+            <h1 class="h3"><span class="red-line"></span> ตารางคะแนนฟุตบอลทุกลีก 2026/2027</h1>
+            <p class="text-muted">อัปเดตแบบเรียลไทม์ทันทีที่การแข่งขันจบลง พร้อมสถิติเหย้า-เยือน ผลต่างประตู และฟอร์ม 5 นัดล่าสุด</p>
+          </div>
+          <!-- League Switcher for Standings -->
+          <div class="standings-league-picker">
+            <label for="standingsLeagueSelect" class="sr-only">เลือกลีก</label>
+            <select id="standingsLeagueSelect" class="form-select">
+              <option value="PL">🏴󠁧󠁢󠁥󠁮󠁧󠁿 พรีเมียร์ลีก อังกฤษ</option>
+              <option value="LL">🇪🇸 ลาลีกา สเปน</option>
+              <option value="SA">🇮🇹 กัลโช่ เซเรีย อา</option>
+              <option value="BL">🇩🇪 บุนเดสลีกา เยอรมนี</option>
+              <option value="TL">🇹🇭 ไทยลีก 1</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- Standings Table Container (Horizontal scroll internal only) -->
+        <div class="table-card">
+          <div class="table-responsive">
+            <table class="standings-table" id="standingsTable">
+              <thead>
+                <tr>
+                  <th class="th-rank">อันดับ</th>
+                  <th class="th-team">สโมสร</th>
+                  <th class="th-num" title="แข่ง">แข่ง</th>
+                  <th class="th-num" title="ชนะ">ช</th>
+                  <th class="th-num" title="เสมอ">ส</th>
+                  <th class="th-num" title="แพ้">พ</th>
+                  <th class="th-num d-desktop" title="ได้">ได้</th>
+                  <th class="th-num d-desktop" title="เสีย">เสีย</th>
+                  <th class="th-num" title="ผลต่างประตูได้เสีย">+/-</th>
+                  <th class="th-pts" title="แต้ม">แต้ม</th>
+                  <th class="th-form d-desktop" title="ฟอร์ม 5 นัดล่าสุด">ฟอร์ม 5 นัด</th>
+                </tr>
+              </thead>
+              <tbody id="standingsTableBody">
+                <!-- Dynamically generated -->
+              </tbody>
+            </table>
+          </div>
+          <div class="standings-legend">
+            <div class="legend-item"><span class="legend-color legend-ucl"></span> 1-4: โควตา ยูฟ่า แชมเปียนส์ลีก</div>
+            <div class="legend-item"><span class="legend-color legend-uel"></span> 5: โควตา ยูฟ่า ยูโรปาลีก</div>
+            <div class="legend-item"><span class="legend-color legend-rel"></span> 18-20: ตกชั้นสู่แชมเปียนชิพ</div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============================================== -->
+    <!-- VIEW: FULL ANALYSIS (บทวิเคราะห์เจาะลึก)       -->
+    <!-- ============================================== -->
+    <section id="viewAnalysis" class="app-view">
+      <div class="container">
+        <div class="view-header">
+          <div>
+            <h1 class="h3"><span class="red-line"></span> ศูนย์รวมบทวิเคราะห์และสถิติก่อนแข่ง</h1>
+            <p class="text-muted">ความโปร่งใสคือหัวใจ: เราแยกสถิติข้อเท็จจริงออกจากความเห็น และแสดงบันทึกความแม่นยำย้อนหลัง</p>
+          </div>
+          <div class="analysis-stats-card">
+            <div class="stat-box">
+              <span class="stat-num">78.4%</span>
+              <span class="stat-label">ความแม่นยำเฉลี่ย (30 วันล่าสุด)</span>
+            </div>
+            <div class="stat-box">
+              <span class="stat-num">142</span>
+              <span class="stat-label">คู่ที่วิเคราะห์ครบทุกมิติ</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="analysis-filters">
+          <button type="button" class="chip active" data-analysis-filter="all">ทั้งหมด</button>
+          <button type="button" class="chip" data-analysis-filter="PL">พรีเมียร์ลีก</button>
+          <button type="button" class="chip" data-analysis-filter="LL">ลาลีกา</button>
+          <button type="button" class="chip" data-analysis-filter="TL">ไทยลีก</button>
+        </div>
+
+        <div class="analysis-full-grid" id="fullAnalysisGrid">
+          <!-- Render full list -->
+        </div>
+      </div>
+    </section>
+
+    <!-- ============================================== -->
+    <!-- VIEW: FAVORITES (รายการโปรด)                  -->
+    <!-- ============================================== -->
+    <section id="viewFavorites" class="app-view">
+      <div class="container">
+        <div class="view-header">
+          <div>
+            <h1 class="h3"><span class="red-line"></span> คู่แข่งขันและทีมโปรดของคุณ</h1>
+            <p class="text-muted">เก็บบันทึกบนเครื่องของคุณอัตโนมัติ (LocalStorage) ไม่พลาดทุกการแจ้งเตือนสกอร์สด</p>
+          </div>
+        </div>
+
+        <div class="match-groups" id="favoriteMatchesContainer">
+          <!-- Dynamically populated or empty message -->
+        </div>
+
+        <div class="empty-state" id="emptyFavoritesState" style="display: none;">
+          <div class="empty-icon">⭐</div>
+          <h3>ยังไม่มีคู่แข่งขันในรายการโปรด</h3>
+          <p>กดไอคอนรูปดาว ⭐ ที่แถวคู่แข่งขันใดก็ได้เพื่อติดตามผลบอลสดที่นี่</p>
+          <button type="button" class="btn-red" data-page="live">ไปที่หน้าผลบอลสด</button>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- ============================================== -->
+  <!-- MATCH DETAIL MODAL (หน้ารายละเอียดคู่แข่งขัน - ศูนย์กลางของเว็บ) -->
+  <!-- ============================================== -->
+  <div class="modal-overlay" id="matchModal" role="dialog" aria-modal="true" aria-labelledby="modalMatchTitle" style="display: none;">
+    <div class="modal-dialog">
+      <div class="modal-header">
+        <div class="match-meta-line">
+          <span class="badge-league" id="modalLeagueBadge">พรีเมียร์ลีก</span>
+          <span class="match-venue" id="modalVenue">สนาม: เอทิฮัด สเตเดี้ยม</span>
+          <span class="match-referee" id="modalReferee">ผู้ตัดสิน: ไมเคิล โอลิเวอร์</span>
+        </div>
+        <button type="button" class="btn-close-modal" id="btnCloseModal" aria-label="ปิดหน้ารายละเอียด">✕</button>
+      </div>
+
+      <div class="modal-body">
+        
+        <!-- BIG SCOREBOARD HERO -->
+        <div class="modal-scoreboard">
+          <!-- Home Team -->
+          <div class="sb-team home">
+            <div class="team-logo-lg" id="modalHomeLogo">MCI</div>
+            <h3 class="team-name-lg" id="modalHomeName">แมนฯ ซิตี้</h3>
+            <span class="team-form" id="modalHomeForm">WWWDW</span>
+          </div>
+
+          <!-- Score & Time Center -->
+          <div class="sb-center">
+            <div class="sb-status-badge" id="modalStatusBadge">กำลังแข่ง 68'</div>
+            <div class="sb-score-big">
+              <span id="modalHomeScore">2</span>
+              <span class="score-sep">-</span>
+              <span id="modalAwayScore">1</span>
+            </div>
+            <div class="sb-ht-score" id="modalHtScore">ครึ่งแรก (1 - 0)</div>
+            <div class="sb-broadcast" id="modalBroadcast">📺 ถ่ายทอดสด: True Premier Football 1</div>
+            <button type="button" class="btn-fav-modal" id="modalFavBtn" aria-label="เพิ่มเป็นคู่โปรด">
+              <span id="modalFavIcon">⭐</span> <span id="modalFavLabel">ติดตามคู่นี้</span>
+            </button>
+          </div>
+
+          <!-- Away Team -->
+          <div class="sb-team away">
+            <div class="team-logo-lg" id="modalAwayLogo">LIV</div>
+            <h3 class="team-name-lg" id="modalAwayName">ลิเวอร์พูล</h3>
+            <span class="team-form" id="modalAwayForm">WWLWW</span>
+          </div>
+        </div>
+
+        <!-- MODAL SUB TABS (เหตุการณ์, สถิติ, รายชื่อ, H2H, ราคาบอล, บทวิเคราะห์) -->
+        <div class="modal-tabs" role="tablist">
+          <button type="button" class="modal-tab active" data-tab="timeline">เหตุการณ์สำคัญ</button>
+          <button type="button" class="modal-tab" data-tab="stats">สถิติการแข่ง</button>
+          <button type="button" class="modal-tab" data-tab="lineups">รายชื่อผู้เล่น</button>
+          <button type="button" class="modal-tab" data-tab="h2h">สถิติพบกัน (H2H)</button>
+          <button type="button" class="modal-tab" data-tab="odds">ราคาบอล & ราคาไหล</button>
+          <button type="button" class="modal-tab" data-tab="preview">บทวิเคราะห์</button>
+        </div>
+
+        <!-- TAB CONTENT 1: TIMELINE (เหตุการณ์) -->
+        <div class="modal-tab-panel active" id="tabPanelTimeline">
+          <div class="timeline-list" id="modalTimelineList">
+            <!-- Events rendered here -->
+          </div>
+        </div>
+
+        <!-- TAB CONTENT 2: STATS (สถิติ) -->
+        <div class="modal-tab-panel" id="tabPanelStats">
+          <div class="stats-comparison-list" id="modalStatsList">
+            <!-- Stats bars rendered here -->
+          </div>
+        </div>
+
+        <!-- TAB CONTENT 3: LINEUPS (รายชื่อผู้เล่น) -->
+        <div class="modal-tab-panel" id="tabPanelLineups">
+          <div class="lineups-header">
+            <span class="badge-verified" id="lineupStatusBadge">✓ ยืนยันรายชื่อทางการแล้ว</span>
+            <span class="text-muted" id="formationText">แมนฯ ซิตี้ (4-3-3) VS ลิเวอร์พูล (4-2-3-1)</span>
+          </div>
+          <div class="lineups-grid">
+            <div class="lineup-col">
+              <h4 class="col-title home" id="lineupHomeTitle">11 ตัวจริง แมนฯ ซิตี้</h4>
+              <ul class="player-list" id="homeStartingXi"></ul>
+              <h5 class="sub-title">ตัวสำรอง</h5>
+              <ul class="player-list subs" id="homeSubs"></ul>
+            </div>
+            <div class="lineup-col">
+              <h4 class="col-title away" id="lineupAwayTitle">11 ตัวจริง ลิเวอร์พูล</h4>
+              <ul class="player-list" id="awayStartingXi"></ul>
+              <h5 class="sub-title">ตัวสำรอง</h5>
+              <ul class="player-list subs" id="awaySubs"></ul>
+            </div>
+          </div>
+        </div>
+
+        <!-- TAB CONTENT 4: H2H (สถิติพบกันย้อนหลัง) -->
+        <div class="modal-tab-panel" id="tabPanelH2H">
+          <div class="h2h-summary" id="modalH2hSummary">
+            <!-- Summary stats -->
+          </div>
+          <h4 class="sub-heading">ผลการพบกัน 5 นัดหลังสุด</h4>
+          <div class="h2h-matches-list" id="modalH2hList">
+            <!-- H2H list -->
+          </div>
+        </div>
+
+        <!-- TAB CONTENT 5: ODDS & FLOW (ราคาบอล & ราคาไหล) -->
+        <div class="modal-tab-panel" id="tabPanelOdds">
+          <div class="odds-modal-container" id="modalOddsContent">
+            <!-- Odds and flow rendered dynamically -->
+          </div>
+        </div>
+
+        <!-- TAB CONTENT 6: PREVIEW & ANALYSIS (บทวิเคราะห์ & ถ่ายทอด) -->
+        <div class="modal-tab-panel" id="tabPanelPreview">
+          <div class="preview-box" id="modalPreviewContent">
+            <!-- Preview article and transparent fact/opinion breakdown -->
+          </div>
+          <div class="report-box">
+            <span>พบข้อมูลคลาดเคลื่อนหรือไม่ถูกต้อง?</span>
+            <button type="button" class="btn-report" id="btnReportData">แจ้งข้อผิดพลาด</button>
+          </div>
+        </div>
+
+      </div>
+
+      <div class="modal-footer">
+        <div class="footer-meta">
+          <span>รหัสการแข่งขัน: <strong id="modalMatchId">M101</strong></span>
+          <span>• แหล่งข้อมูล: GOAL99 Verified Data Hub</span>
+          <span>• ซิงค์อัตโนมัติทุก 15 วินาที</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ABOUT & CONTACT MODAL (เกี่ยวกับเรา & ช่องทางติดต่อ) -->
+  <div class="modal-overlay" id="aboutModal" role="dialog" aria-modal="true" aria-labelledby="modalAboutTitle" style="display: none;">
+    <div class="modal-dialog modal-dialog-sm">
+      <div class="modal-header">
+        <h3 id="modalAboutTitle" class="m-0">เกี่ยวกับ GOAL99 & ติดต่อเรา</h3>
+        <button type="button" class="btn-close-modal" id="btnCloseAboutModal" aria-label="ปิด">✕</button>
+      </div>
+      <div class="modal-body about-body">
+        <div class="brand-showcase">
+          <div class="logo-badge">
+            <span class="logo-text-goal">GOAL</span>
+            <span class="logo-text-99">99</span>
+          </div>
+          <p class="brand-tagline">“เข้ามาแล้วหาคู่บอลที่สนใจ และดูข้อมูลได้เร็วที่สุด”</p>
+        </div>
+        
+        <div class="about-card">
+          <h4>🎯 วิสัยทัศน์และการออกแบบ</h4>
+          <p>GOAL99 ออกแบบด้วยหลักการ <strong>Mobile-First</strong> เพื่อให้แฟนบอลเช็กสกอร์สดและข้อมูลสำคัญได้ครบถ้วนในหน้าจอเดียว (390px ไม่ต้องเลื่อนซ้ายขวา) พร้อมโครงสร้างข้อมูลที่โปร่งใส แยกแยะข้อเท็จจริงออกจากบทวิเคราะห์ และสามารถตรวจสอบความแม่นยำย้อนหลังได้จริง</p>
+        </div>
+
+        <div class="about-card">
+          <h4>📡 แหล่งข้อมูลและความสด</h4>
+          <p>ข้อมูลเวลาเป็น <strong>เวลาประเทศไทย (GMT+7)</strong> มีระบบตรวจจับสถานะการเชื่อมต่อ และระบุเวลาอัปเดตชัดเจน ป้องกันปัญหาความเข้าใจผิดกรณีสัญญาณขัดข้อง</p>
+        </div>
+
+        <div class="about-card">
+          <h4>📬 ช่องทางติดต่อและแจ้งปัญหา</h4>
+          <ul class="contact-list">
+            <li><strong>อีเมลฝ่ายดูแลระบบ:</strong> support@goal99.live</li>
+            <li><strong>LINE Official:</strong> @GOAL99_Official</li>
+            <li><strong>แจ้งข้อมูลผิดพลาด:</strong> คลิกปุ่ม "แจ้งข้อผิดพลาด" ในหน้ารายละเอียดคู่แข่ง</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- TOAST NOTIFICATION CONTAINER (Goal & Alert Toasts) -->
+  <div class="toast-container" id="toastContainer" aria-live="polite" aria-atomic="true"></div>
+
+  <!-- MOBILE BOTTOM NAVIGATION BAR -->
+  <nav class="mobile-nav" role="navigation" aria-label="เมนูนำทางสำหรับมือถือ">
+    <button type="button" class="mob-nav-btn active" data-page="live">
+      <span class="mob-icon">⚡</span>
+      <span class="mob-label">ผลบอลสด</span>
+    </button>
+    <button type="button" class="mob-nav-btn" data-page="schedule">
+      <span class="mob-icon">📅</span>
+      <span class="mob-label">โปรแกรม</span>
+    </button>
+    <button type="button" class="mob-nav-btn" data-page="standings">
+      <span class="mob-icon">🏆</span>
+      <span class="mob-label">ตารางคะแนน</span>
+    </button>
+    <button type="button" class="mob-nav-btn" data-page="analysis">
+      <span class="mob-icon">📊</span>
+      <span class="mob-label">วิเคราะห์บอล</span>
+    </button>
+    <button type="button" class="mob-nav-btn" data-page="favorites">
+      <span class="mob-icon">⭐</span>
+      <span class="mob-label">รายการโปรด</span>
+    </button>
+  </nav>
+
+  <!-- FOOTER -->
+  <footer class="site-footer" role="contentinfo">
+    <div class="container footer-content">
+      <div class="footer-brand">
+        <div class="logo-badge">
+          <span class="logo-text-goal">GOAL</span>
+          <span class="logo-text-99">99</span>
+        </div>
+        <p class="footer-desc">
+          GOAL99 เว็บไซต์รวมข้อมูลฟุตบอลครบทุกลีก ผลบอลสด โปรแกรมการแข่งขัน สถิติย้อนหลัง และบทวิเคราะห์ที่แม่นยำ ออกแบบให้ดูง่าย รวดเร็ว และรองรับสมาร์ตโฟนเต็มรูปแบบ
+        </p>
+        <p class="copyright">© 2026 GOAL99. สงวนลิขสิทธิ์ทุกประการ. เวลาทั้งหมดอิงตามเวลาประเทศไทย (UTC+7)</p>
+      </div>
+
+      <div class="footer-links">
+        <div class="footer-col">
+          <h5>เมนูหลัก</h5>
+          <a href="#" data-page="live">ผลบอลสด</a>
+          <a href="#" data-page="schedule">โปรแกรมบอลวันนี้</a>
+          <a href="#" data-page="standings">ตารางคะแนนพรีเมียร์ลีก</a>
+          <a href="#" data-page="analysis">บทวิเคราะห์ฟุตบอล</a>
+        </div>
+        <div class="footer-col">
+          <h5>ข้อมูล & ความช่วยเหลือ</h5>
+          <a href="#" id="footerAboutLink">เกี่ยวกับ GOAL99</a>
+          <a href="#" id="footerTermsLink">ข้อกำหนดและนโยบาย</a>
+          <a href="#" id="footerContactLink">ติดต่อทีมงาน</a>
+          <a href="#" id="footerReportLink">แจ้งข้อมูลคลาดเคลื่อน</a>
+        </div>
+      </div>
+    </div>
+  </footer>
+
+  <script src="app.js"></script>
+</body>
+</html>
